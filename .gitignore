@@ -1,0 +1,10 @@
+﻿################################################################################
+# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
+################################################################################
+
+/.vs
+/ApiStripePOC/bin/Debug/net6.0
+/ApiStripePOC/obj
+/BlazorStripePOC/.vs
+/BlazorStripePOC/bin/Debug/net6.0
+/BlazorStripePOC/obj
