@@ -9,6 +9,7 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="6.0.35" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="6.0.35" PrivateAssets="all" />
+    <PackageReference Include="Stripe.net" Version="47.1.0" />
   </ItemGroup>
 
 </Project>

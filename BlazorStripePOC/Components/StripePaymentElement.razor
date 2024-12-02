@@ -1,0 +1,80 @@
+﻿@inject HttpClient HttpClient
+@inject IJSRuntime JS
+
+<h3>Registrar Método de Pago</h3>
+<div id="payment-element"></div>
+<button @onclick="RegisterPaymentMethod" disabled="@IsProcessing">
+    @(IsProcessing ? "Procesando..." : "Registrar Método de Pago")
+</button>
+
+<p>@ErrorMessage</p>
+
+@code {
+    [Parameter]
+    public string CustomerId { get; set; }
+
+    private bool IsProcessing = false;
+    private string? ErrorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Obtener el Client Secret desde el backend
+        var response = await HttpClient.PostAsJsonAsync("api/payments/create-setup-intent", CustomerId);
+        var result = await response.Content.ReadFromJsonAsync<SetupIntentResponse>();
+
+        if (!string.IsNullOrEmpty(result?.ClientSecret))
+        {
+            // Inicializar Stripe Payment Element
+            await JS.InvokeVoidAsync("initializeStripe", "pk_test_51QPQWNEKndZkgAQG3XyOCoqJSFNzy6StDBWUpNZGmax0YSun2QQqEj0zIo981ZsyvOhLpT5JXgzgJS7MO7mk2Fvm004uo6PFfO", result.ClientSecret);
+        }
+        else
+        {
+            ErrorMessage = "Error al generar el SetupIntent.";
+        }
+    }
+
+    private async Task RegisterPaymentMethod()
+    {
+        IsProcessing = true;
+
+        // Confirmar el método de pago
+        var result = await JS.InvokeAsync<PaymentResult>("confirmPaymentMethod");
+
+        if (result.Success)
+        {
+            // Enviar el método de pago al backend
+            var response = await HttpClient.PostAsJsonAsync("api/payments/register-payment-method", new
+            {
+                CustomerId,
+                PaymentMethodId = result.PaymentMethodId
+            });
+
+            if (response.IsSuccessStatusCode)
+            {
+                ErrorMessage = "Método de pago registrado con éxito.";
+            }
+            else
+            {
+                ErrorMessage = "Error al registrar el método de pago.";
+            }
+        }
+        else
+        {
+            ErrorMessage = $"Error: {result.Error}";
+        }
+
+        IsProcessing = false;
+    }
+
+    private class SetupIntentResponse
+    {
+        public string? ClientSecret { get; set; }
+    }
+
+    private class PaymentResult
+    {
+        public bool Success { get; set; }
+        public string? PaymentMethodId { get; set; }
+        public string? Error { get; set; }
+    }
+}
