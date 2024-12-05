@@ -1,68 +1,75 @@
 ﻿@inject HttpClient HttpClient
 @inject IJSRuntime JS
 
-<h3>Registrar Método de Pago</h3>
-<div id="payment-element"></div>
-<button @onclick="RegisterPaymentMethod" disabled="@IsProcessing">
-    @(IsProcessing ? "Procesando..." : "Registrar Método de Pago")
-</button>
+<EditForm Model="@customerModel" OnSubmit="RegisterCustomer">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <h3>Customer</h3>
+    <div>
+        <label>Nombre:</label>
+        <InputText id="name" class="form-control" @bind-Value="customerModel.Name" />
+    </div>
+    <div>
+        <label>Email:</label>
+        <InputText id="email" class="form-control" @bind-Value="customerModel.Email" />
+    </div>
+    <ValidationMessage For="@(() => customerModel.PaymentError)" />
+
+    <h3>Payment methods</h3>
+    
+    <div id="payment-element"></div>
+
+    <button type="submit" class="btn btn-primary mt-3">Save</button>
+    
+</EditForm>
 
 <p>@ErrorMessage</p>
 
 @code {
     [Parameter]
     public string CustomerId { get; set; }
+    private bool isPaymentInitialized = false;
+    private CustomerModel customerModel = new CustomerModel();
 
     private bool IsProcessing = false;
     private string? ErrorMessage;
 
     protected override async Task OnInitializedAsync()
     {
-        // Obtener el Client Secret desde el backend
-        var response = await HttpClient.PostAsJsonAsync("api/payments/create-setup-intent", CustomerId);
+        // Llamar al backend para crear el PaymentIntent y obtener el clientSecret
+        var response = await HttpClient.PostAsJsonAsync<SetupIntentResponse>("api/payments/create-setup-intent", null);
         var result = await response.Content.ReadFromJsonAsync<SetupIntentResponse>();
-
-        if (!string.IsNullOrEmpty(result?.ClientSecret))
+        Console.WriteLine(result);
+        if (result != null)
         {
-            // Inicializar Stripe Payment Element
-            await JS.InvokeVoidAsync("initializeStripe", "pk_test_51QPQWNEKndZkgAQG3XyOCoqJSFNzy6StDBWUpNZGmax0YSun2QQqEj0zIo981ZsyvOhLpT5JXgzgJS7MO7mk2Fvm004uo6PFfO", result.ClientSecret);
-        }
-        else
-        {
-            ErrorMessage = "Error al generar el SetupIntent.";
+            // Inicializar Stripe y Payment Element
+            await JS.InvokeVoidAsync("initializeStripe", result.ClientSecret);
+            isPaymentInitialized = true;
         }
     }
 
-    private async Task RegisterPaymentMethod()
+    private async Task RegisterCustomer()
     {
         IsProcessing = true;
 
         // Confirmar el método de pago
-        var result = await JS.InvokeAsync<PaymentResult>("confirmPaymentMethod");
-
-        if (result.Success)
+        var result = await JS.InvokeAsync<string?>("confirmPM");
+        if (result != null)
         {
-            // Enviar el método de pago al backend
-            var response = await HttpClient.PostAsJsonAsync("api/payments/register-payment-method", new
-            {
-                CustomerId,
-                PaymentMethodId = result.PaymentMethodId
-            });
+            CustomerRequest customer = new()
+                {
+                    Email = customerModel.Email,
+                    Name = customerModel.Name,
+                    PaymentMethodId = result
+                };
 
-            if (response.IsSuccessStatusCode)
-            {
-                ErrorMessage = "Método de pago registrado con éxito.";
-            }
-            else
-            {
-                ErrorMessage = "Error al registrar el método de pago.";
-            }
+            var response = await HttpClient.PostAsJsonAsync<CustomerRequest>("api/payments/register-customer", customer);
         }
         else
-        {
-            ErrorMessage = $"Error: {result.Error}";
-        }
+            ErrorMessage = "Error confirming payment method";
 
+        
         IsProcessing = false;
     }
 
@@ -76,5 +83,19 @@
         public bool Success { get; set; }
         public string? PaymentMethodId { get; set; }
         public string? Error { get; set; }
+    }
+
+    public class CustomerRequest
+    {
+        public string Name { get; set; }
+        public string Email { get; set; }
+        public string PaymentMethodId { get; set; }
+    }
+
+    public class CustomerModel
+    {
+        public string Name { get; set; }
+        public string Email { get; set; }
+        public string PaymentError { get; set; }
     }
 }

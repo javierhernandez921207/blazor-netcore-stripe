@@ -1,31 +1,39 @@
 ﻿let stripe;
 let elements;
 let paymentElement;
-
-async function initializeStripe(publishableKey, clientSecret) {
-    stripe = Stripe(publishableKey);
-    elements = stripe.elements({
-        clientSecret: clientSecret 
-    });
-    paymentElement = elements.create("payment");
+async function initializeStripe(clientSecret) {
+    stripe = Stripe('pk_test_51QPQWNEKndZkgAQG3XyOCoqJSFNzy6StDBWUpNZGmax0YSun2QQqEj0zIo981ZsyvOhLpT5JXgzgJS7MO7mk2Fvm004uo6PFfO');  
+    const appearance = {
+        theme: '',
+        variables: { colorPrimaryText: '#262626' }
+    };
+    const options = {
+        fields: {
+            billingDetails: {
+                address: 'auto',
+            }
+        },
+        layout: {
+            type: 'tabs'
+        }
+    };
+    elements = stripe.elements({ clientSecret, appearance });
+    paymentElement = elements.create('payment', options);
     paymentElement.mount("#payment-element");
 
     return { success: true };
 }
-
-async function confirmPaymentMethod(clientSecret) {
-    if (!stripe || !paymentElement) {
-        return { success: false, error: "Stripe not initialized." };
-    }
-
-    const { error, setupIntent } = await stripe.confirmSetup({
-        clientSecret: clientSecret,
+async function confirmPM() {
+    // Confirmar el método de pago con Stripe
+    const { setupIntent, error } = await stripe.confirmSetup({
         elements,
+        redirect: "if_required"
     });
 
     if (error) {
-        return { success: false, error: error.message };
+        console.error(error.message);
+        return null
     }
-
-    return { success: true, paymentMethodId: setupIntent.payment_method };
+    else
+        return setupIntent.payment_method
 }

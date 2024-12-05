@@ -1,0 +1,47 @@
+﻿@inject HttpClient HttpClient
+
+<h3>Charge Customer</h3>
+
+<EditForm Model=chargeRequest OnValidSubmit="SubmitCharge">
+    <div>
+        <label>Customer:</label>
+        <InputText id="customer" class="form-control" @bind-Value="chargeRequest.CustomerId" />
+    </div>
+
+    <div>
+        <label>Payment Method:</label>
+        <InputText id="paymentMethod" class="form-control" @bind-Value="chargeRequest.PaymentMethodId" />
+    </div>
+
+    <div>
+        <label>Amount:</label>
+        <InputNumber id="amount" class="form-control" @bind-Value="chargeRequest.AmountInCents" />
+    </div>
+
+    <button type="submit" class="btn btn-primary mt-3">Charge</button>
+</EditForm>
+
+@code {
+    private ChargeRequest chargeRequest = new ChargeRequest();
+    
+    private async void SubmitCharge()
+    {
+        var response = await HttpClient.PostAsJsonAsync<ChargeRequest>("api/payments/charge-customer", chargeRequest);  
+        if (response.IsSuccessStatusCode)
+        {
+            Console.WriteLine("Customer charged successfully");
+        }
+        else
+        {
+            Console.WriteLine("Error charging customer");
+        }
+    }
+
+    private class ChargeRequest
+    {
+        public string CustomerId { get; set; }
+        public string PaymentMethodId { get; set; }
+        public long AmountInCents { get; set; }
+    }
+
+}
