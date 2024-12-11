@@ -1,0 +1,41 @@
+﻿@inject HttpClient HttpClient
+
+<h3>Subscription</h3>
+
+<EditForm Model=Request OnValidSubmit="SubmitSubscription">
+    <div>
+        <label>Customer:</label>
+        <InputText id="customer" class="form-control" @bind-Value="Request.CustomerId" />
+    </div>
+
+    <div>
+        <label>Price:</label>
+        <InputText id="price" class="form-control" @bind-Value="Request.PriceId" />
+    </div>
+
+    <button type="submit" class="btn btn-primary mt-3">Subscribe</button>
+
+</EditForm>
+
+@code {
+    private CreateSubscriptionRequest Request = new CreateSubscriptionRequest();
+
+    private async void SubmitSubscription()
+    {
+        var response = await HttpClient.PostAsJsonAsync<CreateSubscriptionRequest>("api/payments/create-subscription", Request);
+        if (response.IsSuccessStatusCode)
+        {
+            Console.WriteLine("Subscription created successfully");
+        }
+        else
+        {
+            Console.WriteLine("Error creating subscription");
+        }
+    }
+
+    private class CreateSubscriptionRequest
+    {
+        public string CustomerId { get; set; }
+        public string PriceId { get; set; }
+    }
+}

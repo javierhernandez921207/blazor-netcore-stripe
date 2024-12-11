@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using ApiStripePOC.Model;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Stripe;
 
@@ -15,8 +16,8 @@ namespace ApiStripePOC.Controllers
             var service = new SetupIntentService();            
             var setupIntent = service.Create(new SetupIntentCreateOptions
             {
-                //PaymentMethodTypes = new List<string> { "card", "amazon_pay", "acss_debit" },
-                Usage = "off_session"
+                PaymentMethodTypes = new List<string> { "card", "link" },
+                Usage = "off_session",
             });
 
             return Ok(new { ClientSecret = setupIntent.ClientSecret });
@@ -66,7 +67,7 @@ namespace ApiStripePOC.Controllers
             {
                 var paymentIntentService = new PaymentIntentService();
 
-                // Crear el Payment Intent
+                // Create the Payment Intent
                 var options = new PaymentIntentCreateOptions
                 {
                     Customer = request.CustomerId,
@@ -95,19 +96,52 @@ namespace ApiStripePOC.Controllers
                 });
             }
         }
-        public class CustomerRequest
+        [HttpPost("create-subscription")]
+        public ActionResult<SubscriptionCreateResponse> CreateSubscription([FromBody] CreateSubscriptionRequest req)
         {
-            public string Name { get; set; }
-            public string Email { get; set; }
-            public string PaymentMethodId { get; set; }
-        }
-        public class ChargeRequest
-        {
-            public string CustomerId { get; set; }
-            public string PaymentMethodId { get; set; }
-            public long AmountInCents { get; set; }
-            public string Currency { get; set; } = "usd";
-            public string Description { get; set; } = "Cobro desde API";
+            var customerId = req.CustomerId;
+
+            // Automatically save the payment method to the subscription
+            // when the first payment is successful.
+            var paymentSettings = new SubscriptionPaymentSettingsOptions
+            {
+                SaveDefaultPaymentMethod = "on_subscription",
+            };
+
+            // Create the subscription. Note we're expanding the Subscription's
+            // latest invoice and that invoice's payment_intent
+            // so we can pass it to the front end to confirm the payment
+            var subscriptionOptions = new SubscriptionCreateOptions
+            {
+                Customer = customerId,
+                Items = new List<SubscriptionItemOptions>
+                {
+                    new SubscriptionItemOptions
+                    {
+                        Price = req.PriceId                        
+                    },
+                },
+                Discounts = new List<SubscriptionDiscountOptions>() { new SubscriptionDiscountOptions() { PromotionCode = "promo_1QUxjEEKndZkgAQGKFrxaA7V" } },
+                TrialPeriodDays = 7,
+                PaymentSettings = paymentSettings,
+                PaymentBehavior = "default_incomplete",
+            };
+            subscriptionOptions.AddExpand("latest_invoice.payment_intent");
+            var subscriptionService = new SubscriptionService();
+            try
+            {
+                Subscription subscription = subscriptionService.Create(subscriptionOptions);
+
+                return new SubscriptionCreateResponse
+                {
+                    SubscriptionId = subscription.Id
+                };
+            }
+            catch (StripeException e)
+            {
+                Console.WriteLine($"Failed to create subscription.{e}");
+                return BadRequest();
+            }
         }
     }
 }

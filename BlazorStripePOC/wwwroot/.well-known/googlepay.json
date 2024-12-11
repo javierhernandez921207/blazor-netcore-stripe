@@ -1,8 +1,0 @@
-{
-  "merchantInfo": {
-    "merchantName": "POC Stripe Blazor",
-    "merchantOrigin": "4f82-185-197-192-87.ngrok-free.app"
-  },
-  "allowedCardNetworks": [ "VISA", "MASTERCARD" ],
-  "allowedAuthMethods": [ "PAN_ONLY", "CRYPTOGRAM_3DS" ]
-}

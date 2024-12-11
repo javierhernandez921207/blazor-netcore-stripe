@@ -2,7 +2,10 @@
 let elements;
 let paymentElement;
 async function initializeStripe(clientSecret) {
-    stripe = Stripe('pk_test_51QPQWNEKndZkgAQG3XyOCoqJSFNzy6StDBWUpNZGmax0YSun2QQqEj0zIo981ZsyvOhLpT5JXgzgJS7MO7mk2Fvm004uo6PFfO');  
+    stripe = Stripe('pk_test_51QPQWNEKndZkgAQG3XyOCoqJSFNzy6StDBWUpNZGmax0YSun2QQqEj0zIo981ZsyvOhLpT5JXgzgJS7MO7mk2Fvm004uo6PFfO', {
+        apiVersion: "2024-11-20.acacia",
+        stripeAccount: 'acct_1QPQWNEKndZkgAQG',
+    });
     const appearance = {
         theme: '',
         variables: { colorPrimaryText: '#262626' }

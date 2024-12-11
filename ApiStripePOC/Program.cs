@@ -9,10 +9,13 @@ var builder = WebApplication.CreateBuilder(args);
 // See your keys here: https://dashboard.stripe.com/apikeys
 builder.Services.Configure<StripeClientOptions>(builder.Configuration.GetSection("Stripe"));
 StripeConfiguration.ApiKey = builder.Configuration["Stripe:ApiKey"];
-var options = new PaymentMethodDomainCreateOptions { DomainName = "f82-185-197-192-87.ngrok-free.app" };
+var options = new PaymentMethodDomainCreateOptions { DomainName = "6352-94-140-11-69.ngrok-free.app" };
+var requestOptions = new RequestOptions
+{
+    StripeAccount = "acct_1QPQWNEKndZkgAQG",
+};
 var service = new PaymentMethodDomainService();
-service.Create(options);
-// End Stripe Configuration
+service.Create(options, requestOptions);// End Stripe Configuration
 
 builder.Services.AddCors(options =>
 {
