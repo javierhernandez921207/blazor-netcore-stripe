@@ -13,10 +13,13 @@ namespace ApiStripePOC.Controllers
         [HttpPost("create-setup-intent")]
         public IActionResult CreateSetupIntent()
         {
-            var service = new SetupIntentService();            
+            var service = new SetupIntentService();
             var setupIntent = service.Create(new SetupIntentCreateOptions
             {
-                PaymentMethodTypes = new List<string> { "card", "link" },
+                AutomaticPaymentMethods = new SetupIntentAutomaticPaymentMethodsOptions
+                {
+                    Enabled = true,
+                },
                 Usage = "off_session",
             });
 
@@ -28,7 +31,6 @@ namespace ApiStripePOC.Controllers
         {
             try
             {
-                // Crear el cliente en Stripe
                 var customerService = new CustomerService();
                 var customer = customerService.Create(new CustomerCreateOptions
                 {
@@ -36,14 +38,12 @@ namespace ApiStripePOC.Controllers
                     Email = request.Email,
                 });
 
-                // Asociar el método de pago al cliente
                 var paymentMethodService = new PaymentMethodService();
                 paymentMethodService.Attach(request.PaymentMethodId, new PaymentMethodAttachOptions
                 {
                     Customer = customer.Id,
                 });
-
-                // Opcional: Establecer el método como predeterminado
+                
                 customerService.Update(customer.Id, new CustomerUpdateOptions
                 {
                     InvoiceSettings = new CustomerInvoiceSettingsOptions
@@ -67,15 +67,14 @@ namespace ApiStripePOC.Controllers
             {
                 var paymentIntentService = new PaymentIntentService();
 
-                // Create the Payment Intent
                 var options = new PaymentIntentCreateOptions
                 {
                     Customer = request.CustomerId,
                     Amount = request.AmountInCents,
                     Currency = request.Currency,
                     PaymentMethod = request.PaymentMethodId,
-                    OffSession = true, // Si no necesitas interacción del cliente
-                    Confirm = true,    // Confirmar la transacción automáticamente
+                    OffSession = true, 
+                    Confirm = true
                 };
 
                 var paymentIntent = await paymentIntentService.CreateAsync(options);

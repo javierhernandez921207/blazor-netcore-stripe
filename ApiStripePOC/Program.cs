@@ -9,7 +9,7 @@ var builder = WebApplication.CreateBuilder(args);
 // See your keys here: https://dashboard.stripe.com/apikeys
 builder.Services.Configure<StripeClientOptions>(builder.Configuration.GetSection("Stripe"));
 StripeConfiguration.ApiKey = builder.Configuration["Stripe:ApiKey"];
-var options = new PaymentMethodDomainCreateOptions { DomainName = "6352-94-140-11-69.ngrok-free.app" };
+var options = new PaymentMethodDomainCreateOptions { DomainName = "gbo-parent-staging.azurewebsites.net" };
 var requestOptions = new RequestOptions
 {
     StripeAccount = "acct_1QPQWNEKndZkgAQG",

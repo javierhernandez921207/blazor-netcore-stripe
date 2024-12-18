@@ -1,4 +1,5 @@
-﻿@inject HttpClient HttpClient
+﻿@using System.ComponentModel.DataAnnotations
+@inject HttpClient HttpClient
 @inject IJSRuntime JS
 
 <EditForm Model="@customerModel" OnSubmit="RegisterCustomer">
@@ -38,14 +39,12 @@
     private string? ErrorMessage;
 
     protected override async Task OnInitializedAsync()
-    {
-        // Llamar al backend para crear el PaymentIntent y obtener el clientSecret
+    {        
         var response = await HttpClient.PostAsJsonAsync<SetupIntentResponse>("api/payments/create-setup-intent", null);
         var result = await response.Content.ReadFromJsonAsync<SetupIntentResponse>();
         Console.WriteLine(result);
         if (result != null)
         {
-            // Inicializar Stripe y Payment Element
             await JS.InvokeVoidAsync("initializeStripe", result.ClientSecret);
             isPaymentInitialized = true;
         }
@@ -55,7 +54,6 @@
     {
         IsProcessing = true;
 
-        // Confirmar el método de pago
         var result = await JS.InvokeAsync<string?>("confirmPM");
         if (result != null)
         {
@@ -89,7 +87,9 @@
 
     public class CustomerRequest
     {
+        [Required]
         public string Name { get; set; }
+        [Required]
         public string Email { get; set; }
         public string PaymentMethodId { get; set; }
     }
